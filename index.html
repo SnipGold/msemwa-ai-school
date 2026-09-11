@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Msemwa AI School Automation</title>
+<style>
+:root{--blue:#075985;--green:#16803a;--gold:#d4a72c;--bg:#f4f7fb}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#172033}
+header{background:linear-gradient(120deg,var(--blue),#0f766e);color:#fff;padding:18px 20px}.brand{max-width:1100px;margin:auto;display:flex;justify-content:space-between;align-items:center}
+main{max-width:1100px;margin:20px auto;padding:0 14px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 5px 18px rgba(0,0,0,.06);margin-bottom:18px}
+.metric{font-size:30px;font-weight:800;margin-top:8px}.label{font-size:13px;color:#667085}
+.row{display:flex;gap:10px;flex-wrap:wrap}.field{flex:1;min-width:180px}
+input,textarea,select{width:100%;padding:10px;border:1px solid #d0d5dd;border-radius:9px}
+button{background:var(--green);color:#fff;border:0;padding:11px 14px;border-radius:10px;font-weight:700;cursor:pointer}.gold{background:var(--gold);color:#172033}
+.item{padding:11px 0;border-bottom:1px solid #eee}.list{max-height:360px;overflow:auto}.status{font-size:12px;padding:4px 8px;border-radius:999px;background:#eef7ee;color:#176b31}
+small{opacity:.85}
+</style>
+</head>
+<body>
+<header><div class="brand"><div><h1>Msemwa AI School Automation</h1><small>Smart Schools. Powered by AI.</small></div><div id="health">Checking…</div></div></header>
+<main>
+<div class="grid">
+  <div class="card"><div class="label">Students</div><div class="metric" id="students">—</div></div>
+  <div class="card"><div class="label">Admissions</div><div class="metric" id="admissions">—</div></div>
+  <div class="card"><div class="label">Attendance Today</div><div class="metric" id="attendance">—</div></div>
+  <div class="card"><div class="label">Absent Today</div><div class="metric" id="absent">—</div></div>
+</div>
+
+<div class="card"><h2>Quick actions</h2>
+<div class="row"><button onclick="runReminders()">Run Fee Reminders</button><button class="gold" onclick="loadAll()">Refresh</button></div>
+<p id="actionResult"></p></div>
+
+<div class="card"><h2>Add Student</h2>
+<form id="studentForm"><div class="row">
+<div class="field"><input name="name" placeholder="Student name" required></div>
+<div class="field"><input name="className" placeholder="Class (e.g. Std 3)" required></div>
+<div class="field"><input name="parentPhone" placeholder="Parent WhatsApp e.g. 2557..." required></div>
+<div class="field"><input name="feeBalance" type="number" placeholder="Fee balance"></div>
+<button>Add</button></div></form></div>
+
+<div class="card"><h2>Students</h2><div class="list" id="studentList"></div></div>
+<div class="card"><h2>Recent WhatsApp messages</h2><div class="list" id="messages"></div></div>
+<div class="card"><h2>Recent admissions</h2><div class="list" id="admissionList"></div></div>
+
+<div class="card"><h2>School settings</h2>
+<form id="settingsForm">
+<div class="row">
+<div class="field"><input name="schoolName" placeholder="School name"></div>
+<div class="field"><input name="location" placeholder="Location"></div>
+<div class="field"><input name="phone" placeholder="School phone"></div>
+</div>
+<div class="row" style="margin-top:10px">
+<div class="field"><input name="email" placeholder="School email"></div>
+<div class="field"><input name="officeHours" placeholder="Office hours"></div>
+</div>
+<div style="margin-top:10px"><textarea name="feesInfo" rows="3" placeholder="Fee information used by AI"></textarea></div>
+<div style="margin-top:10px"><button>Save settings</button></div>
+</form></div>
+</main>
+<script>
+let auth = "";
+async function ensureAuth(){
+  const u = prompt("Admin username","admin") || "admin";
+  const p = prompt("Admin password") || "";
+  auth = "Basic " + btoa(u+":"+p);
+}
+async function api(url,opts={}){
+  opts.headers={...(opts.headers||{}),Authorization:auth,"Content-Type":"application/json"};
+  const r=await fetch(url,opts); if(!r.ok) throw new Error(await r.text()); return r.json();
+}
+async function loadAll(){
+  try{
+    const h=await fetch("/api/health").then(r=>r.json());
+    health.textContent=(h.openaiConfigured?"AI ✓":"AI ✗")+" · "+(h.whatsappConfigured?"WhatsApp ✓":"WhatsApp ✗");
+    const s=await api("/api/stats"); students.textContent=s.students; admissions.textContent=s.admissions; attendance.textContent=s.attendanceToday; absent.textContent=s.absentToday;
+    const [stu,msg,adm,set]=await Promise.all([api("/api/students"),api("/api/messages"),api("/api/admissions"),api("/api/settings")]);
+    studentList.innerHTML=stu.map(x=>`<div class="item"><b>${esc(x.name)}</b> · ${esc(x.className)} · ${esc(x.parentPhone)} · TSh ${Number(x.feeBalance||0).toLocaleString()} <span class="status">${esc(x.feeStatus||"Due")}</span></div>`).join("")||"<p>No students yet.</p>";
+    messages.innerHTML=msg.map(x=>`<div class="item"><b>${esc(x.direction)}</b> · ${esc(x.phone)}<br>${esc(x.text)}<br><small>${new Date(x.createdAt).toLocaleString()}</small></div>`).join("")||"<p>No messages yet.</p>";
+    admissionList.innerHTML=adm.map(x=>`<div class="item"><b>${esc(x.childName)}</b> · ${esc(x.className)} · ${esc(x.parentName)} · ${esc(x.phone)}</div>`).join("")||"<p>No admissions yet.</p>";
+    Object.keys(set).forEach(k=>{const e=document.querySelector(`[name="${k}"]`); if(e)e.value=set[k]||""});
+  }catch(e){actionResult.textContent=e.message}
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+studentForm.onsubmit=async e=>{e.preventDefault();try{await api("/api/students",{method:"POST",body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});e.target.reset();loadAll()}catch(err){alert(err.message)}}
+settingsForm.onsubmit=async e=>{e.preventDefault();try{await api("/api/settings",{method:"PUT",body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});alert("Saved")}catch(err){alert(err.message)}}
+async function runReminders(){try{const r=await api("/api/fee-reminders/run",{method:"POST"});actionResult.textContent=`Fee reminders: ${r.sent} sent, ${r.failed} failed.`}catch(e){actionResult.textContent=e.message}}
+(async()=>{await ensureAuth();loadAll()})();
+</script>
+</body>
+</html>
