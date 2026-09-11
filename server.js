@@ -355,7 +355,17 @@ app.put("/api/settings", adminAuth, async (req, res) => {
   await saveDb(db);
   res.json(db.settings);
 });
+app.get("/webhook", (req, res) => {
+const mode = req.query["hub.mode"];
+const token = req.query["hub.verify_token"];
+const challenge = req.query["hub.challenge"];
 
+if (mode === "subscribe" && token === "Msemwa2026Verify") {
+return res.status(200).send(challenge);
+}
+
+return res.sendStatus(403);
+});
 app.listen(PORT, () => {
   console.log(`Msemwa AI School Automation running on port ${PORT}`);
 });
