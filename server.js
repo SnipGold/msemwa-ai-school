@@ -59,8 +59,19 @@ app.post("/chat", async (req, res) => {
       }
     );
 
-    const data = await response.json();
+    
+const data = await response.json();
 
+if (!response.ok) {
+  console.log(data);
+  return res.json({ reply: "Hitilafu ya Gemini API." });
+}
+
+const reply =
+  data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+  "Samahani, sijapata jibu.";
+
+res.json({ reply });
     const reply =
       data.candidates?.[0]?.content?.parts?.[0]?.text ||
       "Samahani, sijapata jibu.";
