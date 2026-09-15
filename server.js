@@ -1,5 +1,6 @@
-
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 app.use(express.json());
@@ -7,17 +8,15 @@ app.use(express.json());
 const PORT = process.env.PORT || 8080;
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "Msemwa2026Verify";
 
-// Health check
-
-import path from "path";
-import { fileURLToPath } from "url";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Home
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
+
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
@@ -41,9 +40,7 @@ app.post("/webhook", (req, res) => {
   res.sendStatus(200);
 });
 
-app.listen(PORT, () => {
-  console.log(`Msemwa AI School Automation running on port ${PORT}`);
-});
+// Chat with Gemini
 app.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
@@ -52,32 +49,39 @@ app.post("/chat", async (req, res) => {
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: message }] }]
+          contents: [
+            {
+              parts: [{ text: message }]
+            }
+          ]
         })
       }
     );
 
-    
-const data = await response.json();
+    const data = await response.json();
 
-if (!response.ok) {
-  console.log(data);
-  return res.json({ reply: "Hitilafu ya Gemini API." });
-}
+    if (!response.ok) {
+      console.log(data);
+      return res.json({ reply: "Hitilafu ya Gemini API." });
+    }
 
-const reply =
-  data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-  "Samahani, sijapata jibu.";
-
-res.json({ reply });
     const reply =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "Samahani, sijapata jibu.";
 
-    res.json({ reply });
+    return res.json({ reply });
+
   } catch (err) {
-    res.status(500).json({ reply: "Server Error" });
+    console.error(err);
+    return res.status(500).json({ reply: "Server Error" });
   }
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Msemwa AI School Automation running on port ${PORT}`);
 });
