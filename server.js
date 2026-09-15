@@ -8,10 +8,16 @@ const PORT = process.env.PORT || 8080;
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "Msemwa2026Verify";
 
 // Health check
-app.get("/", (req, res) => {
-  res.send("Msemwa AI School Automation is running.");
-});
 
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
