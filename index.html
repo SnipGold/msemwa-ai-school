@@ -1,40 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Msemwa AI School</title>
 <style>
-body{font-family:Arial;margin:20px;background:#0f172a;color:white}
-#chat{height:300px;overflow:auto;border:1px solid #444;padding:10px;border-radius:10px;margin-bottom:10px}
-input{width:72%;padding:12px;border-radius:8px;border:none}
+body{font-family:Arial;background:#0f172a;color:white;margin:20px}
+#chat{height:320px;overflow:auto;border:1px solid #334155;padding:10px;border-radius:10px;margin-bottom:10px}
+input{width:70%;padding:12px;border-radius:8px;border:none}
 button{padding:12px;background:#2563eb;color:white;border:none;border-radius:8px}
 </style>
 </head>
 <body>
-<h2>Msemwa AI School</h2>
 
+<h2>Msemwa AI School</h2>
 <div id="chat"></div>
 
 <input id="msg" placeholder="Andika swali..." />
 <button onclick="send()">Tuma</button>
 
 <script>
+const chat=document.getElementById("chat");
+
 async function send(){
- const msg=document.getElementById("msg").value;
- if(!msg) return;
+  const msg=document.getElementById("msg").value;
+  if(!msg)return;
 
- chat.innerHTML += "<p><b>Wewe:</b> "+msg+"</p>";
- document.getElementById("msg").value="";
+  chat.innerHTML+=`<p><b>Wewe:</b> ${msg}</p>`;
+  document.getElementById("msg").value="";
 
- const r=await fetch("/chat",{
-   method:"POST",
-   headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({message:msg})
- });
+  const r=await fetch("/chat",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({message:msg})
+  });
 
- const d=await r.json();
- chat.innerHTML += "<p><b>Msemwa AI:</b> "+d.reply+"</p>";
- chat.scrollTop=chat.scrollHeight;
+  const d=await r.json();
+  chat.innerHTML+=`<p><b>Msemwa AI:</b> ${d.reply}</p>`;
+  chat.scrollTop=chat.scrollHeight;
 }
 </script>
 
