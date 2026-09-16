@@ -55,12 +55,11 @@ parts:[
 
 const data=await response.json();
 
-if(!response.ok){
-
-console.error(data);
-
-return res.json({reply:"Hitilafu ya Gemini API."});
-
+if (!response.ok) {
+  console.error("Gemini Error:", data);
+  return res.json({
+    reply: `Gemini Error ${response.status}`
+  });
 }
 
 const reply=
