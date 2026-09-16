@@ -49,6 +49,7 @@ border:none;
 padding:14px 22px;
 border-radius:12px;
 font-size:16px;
+cursor:pointer;
 }
 </style>
 </head>
@@ -62,53 +63,46 @@ font-size:16px;
 <div id="chat"></div>
 
 <div class="input">
-<input id="message" placeholder="Andika swali...">
+<input id="message" placeholder="Andika swali..." onkeypress="if(event.key==='Enter') send()">
 <button onclick="send()">Tuma</button>
 </div>
 
 </div>
 
 <script>
+const chat = document.getElementById("chat");
 
-const chat=document.getElementById("chat");
-
-function add(sender,text){
-
-chat.innerHTML+=`<p><b>${sender}:</b> ${text}</p>`;
-chat.scrollTop=chat.scrollHeight;
-
+function add(sender, text) {
+  chat.innerHTML += `<p><b>${sender}:</b> ${text}</p>`;
+  chat.scrollTop = chat.scrollHeight;
 }
 
-async function send(){
+async function send() {
+  const input = document.getElementById("message");
+  const message = input.value.trim();
 
-const input=document.getElementById("message");
+  if (!message) return;
 
-const message=input.value.trim();
+  add("Wewe", message);
+  input.value = "";
 
-if(!message) return;
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message })
+    });
 
-add("Wewe",message);
+    const data = await res.json();
 
-input.value="";
-
-const res=await fetch("/chat",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({message})
-
-});
-
-const data=await res.json();
-
-add("Msemwa AI",data.reply);
-
+    add("Msemwa AI", data.reply || "Hakuna jibu.");
+  } catch (err) {
+    add("Msemwa AI", "Tatizo la kuwasiliana na server.");
+    console.error(err);
+  }
 }
-
 </script>
 
 </body>
