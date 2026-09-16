@@ -1,43 +1,114 @@
 <!DOCTYPE html>
-<html>
+<html lang="sw">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Msemwa AI School</title>
+
 <style>
-body{font-family:Arial;background:#0f172a;color:white;margin:20px}
-#chat{height:320px;overflow:auto;border:1px solid #334155;padding:10px;border-radius:10px;margin-bottom:10px}
-input{width:70%;padding:12px;border-radius:8px;border:none}
-button{padding:12px;background:#2563eb;color:white;border:none;border-radius:8px}
+body{
+font-family:Arial,sans-serif;
+background:#08152f;
+color:white;
+margin:0;
+padding:20px;
+}
+
+.container{
+max-width:700px;
+margin:auto;
+}
+
+#chat{
+height:420px;
+overflow:auto;
+border:1px solid #35507a;
+padding:15px;
+border-radius:15px;
+background:#091a38;
+margin-bottom:15px;
+}
+
+.input{
+display:flex;
+gap:10px;
+}
+
+input{
+flex:1;
+padding:14px;
+border-radius:12px;
+border:none;
+font-size:16px;
+}
+
+button{
+background:#2563eb;
+color:white;
+border:none;
+padding:14px 22px;
+border-radius:12px;
+font-size:16px;
+}
 </style>
 </head>
+
 <body>
 
-<h2>Msemwa AI School</h2>
+<div class="container">
+
+<h1>Msemwa AI School</h1>
+
 <div id="chat"></div>
 
-<input id="msg" placeholder="Andika swali..." />
+<div class="input">
+<input id="message" placeholder="Andika swali...">
 <button onclick="send()">Tuma</button>
+</div>
+
+</div>
 
 <script>
+
 const chat=document.getElementById("chat");
 
-async function send(){
-  const msg=document.getElementById("msg").value;
-  if(!msg)return;
+function add(sender,text){
 
-  chat.innerHTML+=`<p><b>Wewe:</b> ${msg}</p>`;
-  document.getElementById("msg").value="";
+chat.innerHTML+=`<p><b>${sender}:</b> ${text}</p>`;
+chat.scrollTop=chat.scrollHeight;
 
-  const r=await fetch("/chat",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({message:msg})
-  });
-
-  const d=await r.json();
-  chat.innerHTML+=`<p><b>Msemwa AI:</b> ${d.reply}</p>`;
-  chat.scrollTop=chat.scrollHeight;
 }
+
+async function send(){
+
+const input=document.getElementById("message");
+
+const message=input.value.trim();
+
+if(!message) return;
+
+add("Wewe",message);
+
+input.value="";
+
+const res=await fetch("/chat",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({message})
+
+});
+
+const data=await res.json();
+
+add("Msemwa AI",data.reply);
+
+}
+
 </script>
 
 </body>
