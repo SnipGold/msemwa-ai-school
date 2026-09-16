@@ -10,12 +10,12 @@ const PORT = process.env.PORT || 8080;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Serve static files (index.html, css, js)
+// Serve static files
 app.use(express.static(__dirname));
 
 // Home
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+  res.sendFile(path.resolve(__dirname, "index.html"));
 });
 
 // Health check
@@ -28,7 +28,7 @@ app.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
 
-    if (!message) {
+    if (!message?.trim()) {
       return res.status(400).json({ reply: "Andika ujumbe kwanza." });
     }
 
@@ -61,7 +61,6 @@ app.post("/chat", async (req, res) => {
       "Samahani, sijapata jibu.";
 
     return res.json({ reply });
-
   } catch (err) {
     console.error(err);
     return res.status(500).json({ reply: "Server Error." });
