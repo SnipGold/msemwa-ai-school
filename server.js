@@ -48,17 +48,24 @@ app.post("/webhook", async (req, res) => {
     const text = message.text?.body || "";
 
     const gemini = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text }] }]
+          contents: [
+            {
+              parts: [{ text }]
+            }
+          ]
         })
       }
     );
 
     const data = await gemini.json();
+
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "Samahani, sijapata jibu.";
@@ -120,7 +127,6 @@ app.post("/chat", async (req, res) => {
       "Samahani, sijapata jibu.";
 
     return res.json({ reply });
-
   } catch (err) {
     console.error(err);
     return res.status(500).json({ reply: "Server Error" });
