@@ -1,29 +1,3 @@
-import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const app = express();
-app.use(express.json());
-
-const PORT = process.env.PORT || 8080;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Serve static files
-app.use(express.static(__dirname));
-
-// Home
-app.get("/", (req, res) => {
-  res.sendFile(path.resolve(__dirname, "index.html"));
-});
-
-// Health check
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, status: "running" });
-});
-
-// Chat with Gemini
 app.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
@@ -33,11 +7,12 @@ app.post("/chat", async (req, res) => {
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY
         },
         body: JSON.stringify({
           contents: [
@@ -52,7 +27,7 @@ app.post("/chat", async (req, res) => {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Gemini Error:", data);
+      console.error(data);
       return res.json({ reply: "Hitilafu ya Gemini API." });
     }
 
@@ -61,13 +36,9 @@ app.post("/chat", async (req, res) => {
       "Samahani, sijapata jibu.";
 
     return res.json({ reply });
+
   } catch (err) {
     console.error(err);
     return res.status(500).json({ reply: "Server Error." });
   }
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`Msemwa AI School Automation running on port ${PORT}`);
 });
