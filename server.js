@@ -3,7 +3,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const app = express();
-
 app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
@@ -26,9 +25,7 @@ app.post("/chat", async (req, res) => {
     const { message } = req.body;
 
     if (!message?.trim()) {
-      return res.status(400).json({
-        reply: "Andika ujumbe kwanza."
-      });
+      return res.status(400).json({ reply: "Andika ujumbe kwanza." });
     }
 
     const response = await fetch(
@@ -62,13 +59,11 @@ app.post("/chat", async (req, res) => {
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "Samahani, sijapata jibu.";
 
-    return res.json({ reply });
+    res.json({ reply });
 
   } catch (err) {
     console.error(err);
-    return res.status(500).json({
-      reply: "Server Error."
-    });
+    res.status(500).json({ reply: "Server Error." });
   }
 });
 
