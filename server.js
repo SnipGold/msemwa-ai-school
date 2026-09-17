@@ -46,20 +46,22 @@ app.post("/chat", async (req, res) => {
       }
     );
 
-    const data = await response.json();
+   const data = await response.json();
 
-    if (!response.ok) {
-      console.error("Gemini Error:", data);
-       }
-    return res.status(response.status).json({
-  reply: JSON.stringify(data)
-});
+if (!response.ok) {
+  console.error("Gemini Error:", data);
+  return res.status(response.status).json({
+    reply: data.error?.message || "Gemini API Error."
+  });
+}
 
-    const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Samahani, sijapata jibu.";
+const reply =
+  data.candidates?.[0]?.content?.parts
+    ?.map(p => p.text)
+    .filter(Boolean)
+    .join("\n") || "Samahani, sijapata jibu.";
 
-    res.json({ reply });
+return res.json({ reply }); 
 
   } catch (err) {
     console.error(err);
