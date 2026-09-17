@@ -50,10 +50,10 @@ app.post("/chat", async (req, res) => {
 
     if (!response.ok) {
       console.error("Gemini Error:", data);
-      return res.status(response.status).json({
-        reply: `Gemini Error ${response.status}`
-      });
-    }
+       }
+    return res.status(response.status).json({
+  reply: JSON.stringify(data)
+});
 
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
