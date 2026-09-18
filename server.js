@@ -28,6 +28,8 @@ app.post("/api/signal", async (req, res) => {
   try {
     const { symbol, signal, score, entry, sl, tp1, tp2 } = req.body;
 
+    console.log("RAW SIGNAL:", req.body);
+
     const message = `
 📊 MsemwaFX Institutional Signal
 
