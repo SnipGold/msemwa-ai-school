@@ -20,6 +20,28 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, status: "running" });
 });
 
+//================ MsemwaFX Signal Endpoint ================
+
+app.post("/api/signal", async (req, res) => {
+  try {
+    const { symbol, signal, score } = req.body;
+
+    console.log("Signal received:", symbol, signal, score);
+
+    res.json({
+      ok: true,
+      received: true,
+      symbol,
+      signal,
+      score
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false });
+  }
+});
+
 app.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
