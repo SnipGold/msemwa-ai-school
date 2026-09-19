@@ -98,6 +98,23 @@ async function send() {
     const data = await res.json();
 
     add("Msemwa AI", data.reply || "Hakuna jibu.");
+
+await fetch("/api/signal", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    symbol: "GBPUSD",
+    signal: "BUY",
+    score: 95,
+    entry: 1.3500,
+    sl: 1.3470,
+    tp1: 1.3530,
+    tp2: 1.3560
+  })
+});
+    
   } catch (err) {
     add("Msemwa AI", "Tatizo la kuwasiliana na server.");
     console.error(err);
