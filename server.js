@@ -25,17 +25,22 @@ async function startBot() {
   let pairingSent = false;
 
   sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
-    if (connection === "connecting" && !pairingSent) {
+    if (
+      connection === "connecting" &&
+      !pairingSent &&
+      !state.creds.registered
+    ) {
       pairingSent = true;
 
       try {
-        await new Promise(r => setTimeout(r, 3000));
+        await new Promise(resolve => setTimeout(resolve, 3000));
         const code = await sock.requestPairingCode(PHONE_NUMBER);
-        console.log("================================");
+
+        console.log("==============================");
         console.log("PAIRING CODE:", code);
-        console.log("================================");
-      } catch (e) {
-        console.log("PAIRING ERROR:", e.message);
+        console.log("==============================");
+      } catch (err) {
+        console.log("PAIRING ERROR:", err.message);
       }
     }
 
@@ -47,6 +52,7 @@ async function startBot() {
       connection === "close" &&
       lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
     ) {
+      console.log("🔄 Reconnecting...");
       startBot();
     }
   });
@@ -75,7 +81,7 @@ async function startBot() {
   });
 }
 
-startBot();
+startBot().catch(console.error);
 
 app.get("/", (_, res) => {
   res.send("Uzima Baraka AI + MsemwaFX Running");
