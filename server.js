@@ -9,6 +9,39 @@ import {
 } from "@whiskeysockets/baileys";
 
 const app = express();
+let sock;
+
+async function startWhatsApp() {
+  const { state, saveCreds } = await useMultiFileAuthState("auth");
+
+  sock = makeWASocket({
+    auth: state,
+    printQRInTerminal: false
+  });
+
+  sock.ev.on("creds.update", saveCreds);
+
+  sock.ev.on("connection.update", ({ connection, qr, lastDisconnect }) => {
+    if (qr) {
+      console.log("=== SCAN THIS QR WITH YOUR WHATSAPP ===");
+      qrcode.generate(qr, { small: true });
+    }
+
+    if (connection === "close") {
+      const shouldReconnect =
+        lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+
+      if (shouldReconnect) startWhatsApp();
+    }
+
+    if (connection === "open") {
+      console.log("WhatsApp Connected!");
+    }
+  });
+}
+
+startWhatsApp();
+
 app.use(express.json());
 
 const MY_NUMBER = "255768665364"; // mfano: 255768665364
