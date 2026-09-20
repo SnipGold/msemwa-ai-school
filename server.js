@@ -1,4 +1,3 @@
-
 import express from "express";
 import pino from "pino";
 import qrcode from "qrcode-terminal";
@@ -9,13 +8,16 @@ import {
 } from "@whiskeysockets/baileys";
 
 const app = express();
-let sock;
+app.use(express.json());
 
-async function startWhatsApp() {
-  const { state, saveCreds } = await useMultiFileAuthState("auth");
+const MY_NUMBER = "255768665364";
 
-  sock = makeWASocket({
+async function startBot() {
+  const { state, saveCreds } = await useMultiFileAuthState("auth_info");
+
+  const sock = makeWASocket({
     auth: state,
+    logger: pino({ level: "silent" }),
     printQRInTerminal: true
   });
 
@@ -23,42 +25,7 @@ async function startWhatsApp() {
 
   sock.ev.on("connection.update", ({ connection, qr, lastDisconnect }) => {
     if (qr) {
-      console.log("=== SCAN THIS QR WITH YOUR WHATSAPP ===");
-      qrcode.generate(qr, { small: true });
-    }
-
-    if (connection === "close") {
-      const shouldReconnect =
-        lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-
-      if (shouldReconnect) startWhatsApp();
-    }
-
-    if (connection === "open") {
-      console.log("WhatsApp Connected!");
-    }
-  });
-}
-
-startWhatsApp();
-
-app.use(express.json());
-
-const MY_NUMBER = "255768665364"; // mfano: 255768665364
-
-async function startBot() {
-  const { state, saveCreds } = await useMultiFileAuthState("auth_info");
-
-  const sock = makeWASocket({
-    auth: state,
-    logger: pino({ level: "silent" })
-  });
-
-  sock.ev.on("creds.update", saveCreds);
-
-  sock.ev.on("connection.update", ({ connection, qr, lastDisconnect }) => {
-    if (qr) {
-      console.log("=== SCAN QR WITH WHATSAPP BUSINESS ===");
+      console.log("=== SCAN QR WITH WHATSAPP ===");
       qrcode.generate(qr, { small: true });
     }
 
@@ -76,9 +43,11 @@ async function startBot() {
 
   sock.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages[0];
+
     if (!msg.message || msg.key.fromMe) return;
 
-    const sender = msg.key.remoteJid.replace("@s.whatsapp.net", "");
+    const sender = msg.key.remoteJid?.replace("@s.whatsapp.net", "") || "";
+
     if (sender !== MY_NUMBER) return;
 
     const text =
@@ -89,8 +58,7 @@ async function startBot() {
     let reply = "Karibu Uzima Baraka AI.";
 
     if (text.toLowerCase().includes("signal")) {
-      reply =
-        "📈 MsemwaFX Signal Mode imewashwa. Baadaye tutaongeza live signals.";
+      reply = "📈 MsemwaFX Signal Mode imewashwa. Live signals zitaongezwa.";
     } else if (text.toLowerCase().includes("hello")) {
       reply = "Habari Yustin! Karibu Uzima Baraka AI.";
     }
@@ -99,11 +67,16 @@ async function startBot() {
   });
 }
 
-startBot();
+startBot().catch((err) => {
+  console.error("BAILEYS ERROR:", err);
+});
 
-app.get("/", (_, res) => {
+app.get("/", (req, res) => {
   res.send("Uzima Baraka AI + MsemwaFX Bot Running");
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
