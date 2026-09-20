@@ -3,49 +3,50 @@ import pino from "pino";
 import {
   makeWASocket,
   DisconnectReason,
-  useMultiFileAuthState,
-  Browsers
+  useMultiFileAuthState
 } from "@whiskeysockets/baileys";
 
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 8080;
+const PHONE_NUMBER = "255768665364"; // bila +
 
-const MY_NUMBER = "255768665364";
+app.use(express.json());
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info");
 
   const sock = makeWASocket({
     auth: state,
-    browser: Browsers.ubuntu("Uzima Baraka AI"),
-    logger: pino({ level: "silent" }),
-    printQRInTerminal: false
+    logger: pino({ level: "silent" })
   });
 
   sock.ev.on("creds.update", saveCreds);
 
-  // Pairing Code
-  if (!sock.authState.creds.registered) {
-    try {
-      const code = await sock.requestPairingCode(MY_NUMBER);
-      console.log("================================");
-      console.log("PAIRING CODE:", code.match(/.{1,4}/g)?.join("-"));
-      console.log("================================");
-    } catch (err) {
-      console.error("PAIRING ERROR:", err);
-    }
-  }
+  let pairingSent = false;
 
-  sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
+  sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
+    if (connection === "connecting" && !pairingSent) {
+      pairingSent = true;
+
+      try {
+        await new Promise(r => setTimeout(r, 3000));
+        const code = await sock.requestPairingCode(PHONE_NUMBER);
+        console.log("================================");
+        console.log("PAIRING CODE:", code);
+        console.log("================================");
+      } catch (e) {
+        console.log("PAIRING ERROR:", e.message);
+      }
+    }
+
     if (connection === "open") {
-      console.log("✅ Uzima Baraka AI Connected.");
+      console.log("✅ Uzima Baraka AI Connected!");
     }
 
     if (
       connection === "close" &&
       lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
     ) {
-      console.log("Reconnecting...");
       startBot();
     }
   });
@@ -55,7 +56,7 @@ async function startBot() {
     if (!msg.message || msg.key.fromMe) return;
 
     const sender = msg.key.remoteJid.replace("@s.whatsapp.net", "");
-    if (sender !== MY_NUMBER) return;
+    if (sender !== PHONE_NUMBER) return;
 
     const text =
       msg.message.conversation ||
@@ -74,13 +75,12 @@ async function startBot() {
   });
 }
 
-startBot().catch(console.error);
+startBot();
 
 app.get("/", (_, res) => {
-  res.send("Uzima Baraka AI + MsemwaFX Bot Running");
+  res.send("Uzima Baraka AI + MsemwaFX Running");
 });
 
-const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
