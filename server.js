@@ -1,35 +1,42 @@
 import express from "express";
 import pino from "pino";
-import qrcode from "qrcode-terminal";
 import {
   makeWASocket,
   DisconnectReason,
-  useMultiFileAuthState
+  useMultiFileAuthState,
+  Browsers
 } from "@whiskeysockets/baileys";
 
 const app = express();
 app.use(express.json());
 
 const MY_NUMBER = "255768665364";
-let sock;
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info");
 
-  sock = makeWASocket({
+  const sock = makeWASocket({
     auth: state,
+    browser: Browsers.ubuntu("Uzima Baraka AI"),
     logger: pino({ level: "silent" }),
-    printQRInTerminal: true
+    printQRInTerminal: false
   });
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", ({ connection, qr, lastDisconnect }) => {
-    if (qr) {
-      console.log("=== SCAN QR WITH WHATSAPP ===");
-      qrcode.generate(qr, { small: true });
+  // Pairing Code
+  if (!sock.authState.creds.registered) {
+    try {
+      const code = await sock.requestPairingCode(MY_NUMBER);
+      console.log("================================");
+      console.log("PAIRING CODE:", code.match(/.{1,4}/g)?.join("-"));
+      console.log("================================");
+    } catch (err) {
+      console.error("PAIRING ERROR:", err);
     }
+  }
 
+  sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
     if (connection === "open") {
       console.log("✅ Uzima Baraka AI Connected.");
     }
@@ -38,6 +45,7 @@ async function startBot() {
       connection === "close" &&
       lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
     ) {
+      console.log("Reconnecting...");
       startBot();
     }
   });
