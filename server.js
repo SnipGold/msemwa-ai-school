@@ -1,6 +1,5 @@
 import express from "express";
 import pino from "pino";
-import qrcode from "qrcode-terminal";
 import {
   makeWASocket,
   DisconnectReason,
@@ -11,26 +10,31 @@ const app = express();
 app.use(express.json());
 
 const MY_NUMBER = "255768665364";
+let sock;
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info");
 
-  const sock = makeWASocket({
+  sock = makeWASocket({
     auth: state,
     logger: pino({ level: "silent" }),
-    printQRInTerminal: true
+    printQRInTerminal: false
   });
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", ({ connection, qr, lastDisconnect }) => {
-    if (qr) {
-      console.log("=== SCAN QR WITH WHATSAPP ===");
-      qrcode.generate(qr, { small: true });
-    }
+  // Pairing Code (badala ya QR)
+  if (!sock.authState.creds.registered) {
+    const code = await sock.requestPairingCode(MY_NUMBER);
+    console.log("================================");
+    console.log("PAIRING CODE:", code);
+    console.log("Open WhatsApp → Linked Devices → Link with phone number");
+    console.log("================================");
+  }
 
+  sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
     if (connection === "open") {
-      console.log("✅ Uzima Baraka AI connected.");
+      console.log("✅ Uzima Baraka AI Connected.");
     }
 
     if (
@@ -43,11 +47,9 @@ async function startBot() {
 
   sock.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages[0];
-
     if (!msg.message || msg.key.fromMe) return;
 
-    const sender = msg.key.remoteJid?.replace("@s.whatsapp.net", "") || "";
-
+    const sender = msg.key.remoteJid.replace("@s.whatsapp.net", "");
     if (sender !== MY_NUMBER) return;
 
     const text =
@@ -58,7 +60,8 @@ async function startBot() {
     let reply = "Karibu Uzima Baraka AI.";
 
     if (text.toLowerCase().includes("signal")) {
-      reply = "📈 MsemwaFX Signal Mode imewashwa. Live signals zitaongezwa.";
+      reply =
+        "📈 MsemwaFX Signal Mode imewashwa. Live signals zitaongezwa baadaye.";
     } else if (text.toLowerCase().includes("hello")) {
       reply = "Habari Yustin! Karibu Uzima Baraka AI.";
     }
@@ -67,16 +70,13 @@ async function startBot() {
   });
 }
 
-startBot().catch((err) => {
-  console.error("BAILEYS ERROR:", err);
-});
+startBot().catch(console.error);
 
-app.get("/", (req, res) => {
+app.get("/", (_, res) => {
   res.send("Uzima Baraka AI + MsemwaFX Bot Running");
 });
 
 const PORT = process.env.PORT || 8080;
-
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
